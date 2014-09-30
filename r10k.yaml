@@ -1,10 +1,15 @@
 # The location to use for storing cached Git repos
-:cachedir: '/var/cache/r10k'
+:cachedir: '/etc/puppet/r10k_cache'
 
 # A list of git repositories to create
 :sources:
   # This will clone the git repository and instantiate an environment per
   # branch in /etc/puppet/environments
   :personal-puppet:
-    remote: 'https://github.com/grahamgilbert/personal-puppet'
+    remote: 'https://github.com/clburlison/personal-puppet'
     basedir: '/etc/puppet/environments'
+    purge: true
+  :hiera:
+    remote: 'https://github.com/clburlison/personal-hiera'
+    basedir: '/etc/puppet/hieradata'
+    purge: true  

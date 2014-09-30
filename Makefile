@@ -3,13 +3,19 @@ include /usr/local/share/luggage/luggage.make
 
 TITLE=puppet_run
 PACKAGE_NAME=${TITLE}
-REVERSE_DOMAIN=com.grahamgilbert
-PACKAGE_VERSION=1.7.4
+REVERSE_DOMAIN=com.clburlison
+PACKAGE_VERSION=1.7.5
 PAYLOAD=\
-	pack-Library-Management-bin-puppet_run.py \
-	pack-Library-LaunchDaemons-com.grahamgilbert.puppet_run.plist \
+	pack-puppet_run \
+	pack-Library-LaunchDaemons-com.clburlison.puppet_run.plist \
 	pack-puppetconf \
 	pack-r10kconf
+
+pack-puppet_run: l_usr
+	@sudo mkdir -p ${WORK_D}/usr/local/bin/
+	@sudo ${CP} puppet_run.py ${WORK_D}/usr/local/bin/puppet_run.py
+	@sudo chown -R root:wheel ${WORK_D}/usr/local/bin/puppet_run.py
+	@sudo chmod 700 ${WORK_D}/usr/local/bin/puppet_run.py
 
 pack-puppetconf: l_private_etc
 	@sudo mkdir -p ${WORK_D}/private/etc/puppet/
