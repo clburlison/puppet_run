@@ -4,7 +4,7 @@ include /usr/local/share/luggage/luggage.make
 TITLE=puppet_run
 PACKAGE_NAME=${TITLE}
 REVERSE_DOMAIN=com.clburlison
-PACKAGE_VERSION=1.7.5
+PACKAGE_VERSION=2.0
 PAYLOAD=\
 	pack-puppet_run \
 	pack-Library-LaunchDaemons-com.clburlison.puppet_run.plist \
