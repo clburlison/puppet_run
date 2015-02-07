@@ -7,11 +7,15 @@ import os
 import random
 import sys
 import time
+import ConfigParser
 
 logging.basicConfig(filename='/var/log/puppet_run.log',level=logging.INFO)
 logger = logging.getLogger('puppet_run')
+config = ConfigParser.SafeConfigParser()
+config.read("/etc/puppet/puppet.conf")
+myenv = config.get("main", "myenv")
 
-puppet_cmd = ['/usr/bin/puppet', 'apply', '--verbose', '/etc/puppet/environments/production/manifests/site.pp']
+puppet_cmd = ['/usr/bin/puppet', 'apply', '--verbose', '/etc/puppet/environments/' + myenv + '/manifests/site.pp']
 
 r10k_cmd = ['/usr/bin/r10k', 'deploy', 'environment', '-p', '--verbose']
 run_lock_file = '/var/lib/puppet/state/agent_catalog_run.lock'
