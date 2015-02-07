@@ -1,10 +1,10 @@
 :cachedir: '/etc/puppet/r10k_cache'
 :sources:
   :personal-puppet:
-    remote: 'https://github.com/clburlison/personal-puppet'
+    remote: 'https://github.com/clburlison/personal-puppet-environment'
     basedir: '/etc/puppet/environments'
     purge: true
   :hiera:
-    remote: 'https://github.com/clburlison/personal-hiera'
+    remote: 'https://github.com/clburlison/personal-puppet-hiera'
     basedir: '/etc/puppet/hieradata'
     purge: true  
