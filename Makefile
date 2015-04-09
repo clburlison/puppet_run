@@ -5,7 +5,6 @@ TITLE=clburlison_puppet_run
 REVERSE_DOMAIN=com.clburlison
 PAYLOAD=\
 	pack-puppet_run \
-	pack-supervisor \
 	pack-Library-LaunchDaemons-com.clburlison.puppet_run.plist \
 	pack-puppetconf \
 	pack-r10kconf \
