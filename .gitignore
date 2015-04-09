@@ -54,3 +54,7 @@ docs/_build/
 
 
 puppet_run.pkg
+*.pkg
+*.dmg
+*.DS_Store
+/keys
