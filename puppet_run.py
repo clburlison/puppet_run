@@ -12,11 +12,10 @@ import ConfigParser
 logging.basicConfig(filename='/var/log/puppet_run.log',level=logging.INFO)
 logger = logging.getLogger('puppet_run')
 config = ConfigParser.SafeConfigParser()
-config.read("/etc/puppet/puppet.conf")
+config.read("/private/etc/puppetlabs/puppet/puppet.conf")
 environment = config.get("main", "environment")
-
-puppet_cmd = ['/usr/local/bin/puppet', 'apply', '--verbose', '/etc/puppet/environments/' + environment + '/manifests/site.pp']
-r10k_cmd = ['/usr/local/bin/r10k', 'deploy', 'environment', '-p', '--verbose']
+puppet_cmd = ['/opt/puppetlabs/bin/puppet', 'apply', '--verbose', '/private/etc/puppetlabs/code/environments/' + environment + '/manifests/site.pp']
+r10k_cmd = ['/opt/puppetlabs/bin/r10k', 'deploy', 'environment', '-p', '--verbose']
 run_lock_file = '/var/lib/puppet/state/agent_catalog_run.lock'
 disabled_lock_file = '/var/lib/puppet/state/agent_disabled.lock'
 max_delay = 1200
