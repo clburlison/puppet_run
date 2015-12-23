@@ -1,10 +1,9 @@
 USE_PKGBUILD=1
 include /usr/local/share/luggage/luggage.make
+PB_EXTRA_ARGS+= --sign "Developer ID Installer: Clayton Burlison"
 
-R10K_BINARY='/opt/puppetlabs/puppet/lib/ruby/gems/2.1.0/gems/r10k-2.1.1/bin/r10k'
-INSTALL_DIR='pkgroot/opt/puppetlabs/puppet/lib/ruby/gems/2.1.0/gems'
-BINARY_DIR='pkgroot/opt/puppetlabs/bin'
-GEM_PATH='/opt/puppetlabs/puppet/bin/gem'
+INSTALL_DIR='pkgroot/opt/puppetlabs/puppet/lib/ruby/gems/2.1.0'
+BINARY_DIR='pkgroot/opt/puppetlabs/puppet/bin'
 
 TITLE=clburlison_puppet_run
 REVERSE_DOMAIN=com.clburlison
@@ -15,7 +14,7 @@ PAYLOAD=\
 	pack-r10kconf \
 	pack-pathsd \
 	pack-keys \
-	pack-gems-no-build
+	pack-gems
 
 pack-puppet_run: l_usr
 	@sudo mkdir -p ${WORK_D}/usr/local/bin/
@@ -41,7 +40,8 @@ pack-pathsd: l_private_etc
 pack-keys: l_private_etc
 	@sudo mkdir -p ${WORK_D}/private/etc/puppetlabs/puppet/keys
 	@sudo ${CP} keys/* ${WORK_D}/private/etc/puppetlabs/puppet/keys/
-	@sudo chown -R puppet:puppet ${WORK_D}/private/etc/puppetlabs/puppet/keys
+	# @sudo chown -R puppet:puppet ${WORK_D}/private/etc/puppetlabs/puppet/keys
+	@sudo chown -R root:wheel ${WORK_D}/private/etc/puppetlabs/puppet/keys
 	@sudo chmod -R 0500 ${WORK_D}/private/etc/puppetlabs/puppet/keys
 	@sudo chmod 0400 ${WORK_D}/private/etc/puppetlabs/puppet/keys/private_key.pkcs7.pem
 	@sudo chmod 0400 ${WORK_D}/private/etc/puppetlabs/puppet/keys/public_key.pkcs7.pem
@@ -51,7 +51,6 @@ pack-gems: r10k hiera-eyaml sqlite3 CFPropertyList
 
 pack-gems-no-build:
 	@sudo ${CP} -R pkgroot/* ${WORK_D}
-
 
 ruby-paths:
 	rm -rf pkgroot

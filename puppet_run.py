@@ -15,7 +15,7 @@ config = ConfigParser.SafeConfigParser()
 config.read("/private/etc/puppetlabs/puppet/puppet.conf")
 environment = config.get("main", "environment")
 puppet_cmd = ['/opt/puppetlabs/bin/puppet', 'apply', '--verbose', '/private/etc/puppetlabs/code/environments/' + environment + '/manifests/site.pp']
-r10k_cmd = ['/opt/puppetlabs/bin/r10k', 'deploy', 'environment', '-p', '--verbose']
+r10k_cmd = ['/opt/puppetlabs/puppet/bin/r10k', 'deploy', 'environment', '-p', '--verbose']
 run_lock_file = '/var/lib/puppet/state/agent_catalog_run.lock'
 disabled_lock_file = '/var/lib/puppet/state/agent_disabled.lock'
 max_delay = 1200
