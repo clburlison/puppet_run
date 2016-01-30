@@ -12,8 +12,9 @@ import ConfigParser
 logging.basicConfig(filename='/var/log/puppet_run.log',level=logging.INFO)
 logger = logging.getLogger('puppet_run')
 config = ConfigParser.SafeConfigParser()
-config.read("/private/etc/puppetlabs/puppet/puppet.conf")
-environment = config.get("main", "environment")
+# config.read("/private/etc/puppetlabs/puppet/puppet.conf")
+# environment = config.get("main", "environment")
+environment = 'production'
 puppet_cmd = ['/opt/puppetlabs/bin/puppet', 'apply', '--verbose', '/private/etc/puppetlabs/code/environments/' + environment + '/manifests/site.pp']
 r10k_cmd = ['/opt/puppetlabs/puppet/bin/r10k', 'deploy', 'environment', '-p', '--verbose']
 run_lock_file = '/var/lib/puppet/state/agent_catalog_run.lock'
@@ -32,18 +33,38 @@ def ip_addresses():
     return proc.communicate()[0].replace('\n', '')
 
 def checkNetwork():
-    if ip_addresses().strip() != "0":
-        logger.info('Network connection is active. ')
+    for i in range(5):
+        if ip_addresses().strip() != "0":
+            logger.info('Network connection is active. ')
+            break
+        else:
+            logger.info('Network connection is inactive. ')
+        time.sleep(3)
+
+def which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+    
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
     else:
-        logger.info('Network connection is inactive, exiting. ')
-        sys.exit(0)
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+    return None
 
 def run_puppet():
-    logger.info("Running r10k...")
-    returncode = subprocess.call(r10k_cmd)
-    logger.info("Running Puppet...")
-    returncode = subprocess.call(puppet_cmd)
-
+    if which('r10k'):
+        logger.info("Running r10k...")
+        returncode = subprocess.call(r10k_cmd)
+    if which('puppet'):
+        logger.info("Running Puppet...")
+        returncode = subprocess.call(puppet_cmd)
 
 def main():
     # Need to be running as root

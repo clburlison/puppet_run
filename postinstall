@@ -1,0 +1,96 @@
+#!/usr/bin/python
+"""Use puppet4 to install required ruby gems for a masterless setup.
+Afterwards we will us our custom pupper_run.py wrapper script to run 
+r10k & puppet."""
+
+import subprocess
+import logging
+import os
+import sys
+import shutil
+import platform
+
+logging.basicConfig(filename='/var/log/puppet_run.log',level=logging.INFO)
+logger = logging.getLogger('puppet_run')
+puppet_cmd = ['/opt/puppetlabs/bin/puppet', 'apply', '--verbose', '-t', '/Library/Puppet/site.pp']
+run_lock_file = '/var/lib/puppet/state/agent_catalog_run.lock'
+disabled_lock_file = '/var/lib/puppet/state/agent_disabled.lock'
+
+def ip_addresses():
+    """Retrieve OS version."""
+    command = "ifconfig  | grep -E 'inet.[0-9]' | grep -v '127.0.0.1' | awk '{ print $2}' | wc -l"
+    proc = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE)
+    return proc.communicate()[0].replace('\n', '')
+
+def check_network():
+    """Retrieve OS version."""
+    if ip_addresses().strip() != "0":
+        logger.info('Network connection is active. ')
+    else:
+        logger.info('Network connection is inactive. ')
+        sys.exit(-1)
+
+def run_puppet():
+    """Retrieve OS version."""
+    if os.path.exists('/opt/puppetlabs/bin/puppet'):
+        logger.info("Installing Ruby Gems with Puppet...")
+        returncode = subprocess.call(puppet_cmd)
+
+def cleanup():
+    """Retrieve OS version."""
+    logger.info('Cleaning up...')
+    shutil.rmtree('/Library/Puppet')
+
+def os_vers():
+    """Retrieve OS version."""
+    maj_os_vers = platform.mac_ver()[0].split('.')[1]
+    return maj_os_vers
+
+def install_commandline_tools():
+    """Retrieve OS version."""
+    logger.info('Checking to see if we need to install command line tools...')
+    if not 9 <= int(os_vers()):
+        logger.info("Unsupported Operating System.")
+        sys.exit(-1)
+    
+    if not os.path.exists('/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework'):
+        logger.info('We need to install command line tools')
+        # create the placeholder file that's checked by CLI updates' .dist code in Apple's SUS catalog
+        command = ['/usr/bin/touch', '/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress']
+        subprocess.Popen(command, shell=False,stdout=subprocess.PIPE)
+        
+        # find the CLI Tools update
+        logger.info('Finding the update')
+        command = "softwareupdate -l | grep \"\*.*Command Line\" | head -n 1 | awk -F\"*\" '{print $2}' | sed -e 's/^ *//' | tr -d '\n'"
+        p = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE)
+        cli_install_pkg_name = p.communicate()[0].replace('\n', '')
+        
+        # install it
+        logger.info('Installing CLITools via softwareupdate')
+        command = ['softwareupdate', '-i', cli_install_pkg_name, '-v']
+        subprocess.Popen(command, shell=False,stdout=subprocess.PIPE)
+        
+        logger.info('Command line tools have been installed')
+    else:
+        logger.info('Command line tools already installed')
+
+def full_puppet_run():
+    """Retrieve OS version."""
+    logger.info('Running full puppet run with r10k + puppet...')
+    proc = subprocess.Popen([sys.executable, "/usr/local/bin/puppet_run.py"])
+    proc.communicate()
+    logger.info('Puppet run complete')
+
+def main():
+    try:
+        check_network()
+        install_commandline_tools()
+        run_puppet()
+        cleanup()
+        full_puppet_run()
+    except SystemExit as e:
+        # this log will include traceback
+        logger.exception('Process failed with the following: %S' % e)
+
+if __name__ == "__main__":
+    main()
