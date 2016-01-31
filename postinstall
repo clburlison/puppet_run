@@ -1,0 +1,117 @@
+#!/usr/bin/python
+"""Use puppet4 to install required ruby gems for a masterless setup.
+Afterwards we will us our custom pupper_run.py wrapper script to run 
+r10k & puppet."""
+
+import subprocess
+import logging
+import os
+import sys
+import shutil
+import platform
+import time
+
+start_time = time.time()
+logging.basicConfig(filename='/var/log/puppet_run.log',level=logging.INFO)
+logger = logging.getLogger('Initial_Setup')
+puppet = '/opt/puppetlabs/bin/puppet'
+puppet_cmd = [puppet, 'apply', '--verbose', '-t', '/Library/Puppet/site.pp']
+
+def ip_addresses():
+    """Return all system IP addresses."""
+    command = "ifconfig  | grep -E 'inet.[0-9]' | grep -v '127.0.0.1' | awk '{ print $2}' | wc -l"
+    proc = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE)
+    return proc.communicate()[0].replace('\n', '')
+
+def check_network():
+    """Check for an active network connection."""
+    if ip_addresses().strip() != "0":
+        logger.info('Network connection is active. ')
+    else:
+        logger.info('Network connection is inactive. ')
+        sys.exit(-1)
+
+def install_gems_using_puppet():
+    """Run puppet to install Ruby Gems needed for
+    my Puppet 4 masterless setup."""
+    if os.path.exists('/opt/puppetlabs/bin/puppet'):
+        logger.info("Installing Ruby Gems with Puppet...")
+        returncode = subprocess.call(puppet_cmd)
+
+def cleanup():
+    """Remove temporary files."""
+    logger.info('Cleaning up...')
+    if os.path.exists('/Library/Puppet'):
+        shutil.rmtree('/Library/Puppet')
+
+def remove_old_gems():
+    """Remove old puppet 3 gems."""
+    options = '--force --all --executables --install-dir /Library/Ruby/Gems/2.0.0'
+    gems = [ 'CFPropertyList', 'colored', 'cri', 'facter', 'faraday', 'faraday_middleware',
+            'faraday_middleware-multi_json', 'hiera', 'hiera-eyaml', 'highline', 'io-console', 'json', 
+            'json_pure', 'libxml-ruby', 'log4r', 'minitar', 'multi_json', 'multipart-post', 'nokogiri', 
+            'rdoc', 'sqlite3', 'trollop', 'puppet', 'r10k', 'semantic_puppet' ]
+    
+    logger.info('Removing old Puppet 3 gems...')
+    for gem in gems:
+        command = "/usr/bin/gem uninstall %s %s" % (gem, options)
+        proc = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc.communicate()
+
+def os_vers():
+    """Retrieve OS version."""
+    maj_os_vers = platform.mac_ver()[0].split('.')[1]
+    return maj_os_vers
+
+def install_commandline_tools():
+    """Install command line tools."""
+    logger.info('Checking to see if we need to install command line tools...')
+    if not 9 <= int(os_vers()):
+        logger.info("Unsupported Operating System.")
+        sys.exit(-1)
+    
+    if not os.path.exists('/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework'):
+        logger.info('We need to install command line tools')
+        # create the placeholder file that's checked by CLI updates' .dist code in Apple's SUS catalog
+        command = ['/usr/bin/touch', '/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress']
+        subprocess.Popen(command, shell=False,stdout=subprocess.PIPE)
+        
+        # find the CLI Tools update
+        logger.info('Finding the update')
+        command = "softwareupdate -l | grep \"\*.*Command Line\" | head -n 1 | awk -F\"*\" '{print $2}' | sed -e 's/^ *//' | tr -d '\n'"
+        p = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE)
+        cli_install_pkg_name = p.communicate()[0].replace('\n', '')
+        
+        # install it
+        logger.info('Installing CLITools via softwareupdate')
+        command = ['softwareupdate', '-i', cli_install_pkg_name, '-v']
+        subprocess.Popen(command, shell=False,stdout=subprocess.PIPE)
+        
+        logger.info('Command line tools have been installed')
+    else:
+        logger.info('Command line tools already installed')
+
+def full_puppet_run():
+    """Run full puppet script."""
+    logger.info('Running full puppet run with r10k + puppet...')
+    proc = subprocess.Popen([sys.executable, "/usr/local/bin/puppet_run.py"])
+    proc.communicate()
+    logger.info('Initial Puppet run complete')
+
+def main():
+    """Main for running the puppet setup."""
+    logger.info("--- Starting Initial Setup ---")
+    try:
+        check_network()
+        install_commandline_tools()
+        install_gems_using_puppet()
+        remove_old_gems()
+        cleanup()
+        full_puppet_run()
+        logger.info("--- Initial Setup Completed in: %s Seconds ---" % (time.time() - start_time))
+    except SystemExit as e:
+        # this log will include traceback
+        logger.exception('Process failed with the following: %S' % e)
+
+if __name__ == "__main__":
+    main()

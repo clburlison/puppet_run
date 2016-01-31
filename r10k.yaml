@@ -1,6 +1,6 @@
-:cachedir: '/etc/puppet/r10k_cache'
+:cachedir: '/etc/puppetlabs/r10k_cache'
 :sources:
   :puppet-control:
     remote: 'https://github.com/clburlison/puppet-control'
-    basedir: '/etc/puppet/environments'
+    basedir: '/etc/puppetlabs/code/environments'
     purge: true

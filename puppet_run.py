@@ -12,13 +12,13 @@ import ConfigParser
 logging.basicConfig(filename='/var/log/puppet_run.log',level=logging.INFO)
 logger = logging.getLogger('puppet_run')
 config = ConfigParser.SafeConfigParser()
-config.read("/etc/puppet/puppet.conf")
+config.read("/private/etc/puppetlabs/puppet/puppet.conf")
 environment = config.get("main", "environment")
-
-puppet_cmd = ['/usr/local/bin/puppet', 'apply', '--verbose', '/etc/puppet/environments/' + environment + '/manifests/site.pp']
-r10k_cmd = ['/usr/local/bin/r10k', 'deploy', 'environment', '-p', '--verbose']
-run_lock_file = '/var/lib/puppet/state/agent_catalog_run.lock'
-disabled_lock_file = '/var/lib/puppet/state/agent_disabled.lock'
+# environment = 'production'
+puppet = '/opt/puppetlabs/bin/puppet'
+r10k = '/opt/puppetlabs/puppet/bin/r10k'
+puppet_cmd = [puppet, 'apply', '--verbose', '/private/etc/puppetlabs/code/environments/' + environment + '/manifests/site.pp']
+r10k_cmd = [r10k, 'deploy', 'environment', '-p', '--verbose']
 max_delay = 1200
 
 
@@ -33,18 +33,25 @@ def ip_addresses():
     return proc.communicate()[0].replace('\n', '')
 
 def checkNetwork():
-    if ip_addresses().strip() != "0":
-        logger.info('Network connection is active. ')
-    else:
-        logger.info('Network connection is inactive, exiting. ')
-        sys.exit(0)
+    for i in range(5):
+        if ip_addresses().strip() != "0":
+            logger.info('Network connection is active. ')
+            break
+        else:
+            logger.info('Network connection is inactive. ')
+        time.sleep(3)
 
 def run_puppet():
-    logger.info("Running r10k...")
-    returncode = subprocess.call(r10k_cmd)
-    logger.info("Running Puppet...")
-    returncode = subprocess.call(puppet_cmd)
-
+    if os.path.isfile(r10k):
+        logger.info("Running r10k...")
+        returncode = subprocess.call(r10k_cmd)
+    else:
+        logger.info("r10k not found")
+    if os.path.isfile(puppet):
+        logger.info("Running Puppet...")
+        returncode = subprocess.call(puppet_cmd)
+    else:
+        logger.info("puppet not found")
 
 def main():
     # Need to be running as root
