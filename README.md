@@ -10,7 +10,7 @@ puppet apply /etc/puppet/environments/%{environment}/manifests/site.pp
 Fully tested and working with Puppet 4 and the new all-in-one Puppet agent package.
 
 ##Settings
-This setup is using a masterless puppet environment. To test changes away from production we can modify the ``puppet.conf`` file. The 'environment' variable allows us to pick which branch our client is currently on. By default this is the ``production`` branch. We can also modify the heira path from the same ``puppet.conf`` file.
+This setup is using a masterless puppet environment. To test changes away from production we can modify the ``puppet.conf`` file. The 'environment' variable allows us to pick which branch our client is currently on. By default this is the ``production`` branch.
 
 ###Run Frequency
 By default the ``puppet_run.py`` script will run every 20 minutes. This can be modified in the LaunchDaemon in the ``StartCalendarInterval`` key.
