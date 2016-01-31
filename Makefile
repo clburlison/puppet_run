@@ -5,6 +5,10 @@ PB_EXTRA_ARGS+= --sign "Developer ID Installer: Clayton Burlison"
 INSTALL_DIR='pkgroot/opt/puppetlabs/puppet/lib/ruby/gems/2.1.0'
 BINARY_DIR='pkgroot/opt/puppetlabs/puppet/bin'
 GEM='/opt/puppetlabs/puppet/bin/gem'
+R10K_VER='2.1.1'
+HIERA_EYAML_VER='2.0.8'
+SQLITE3_VER='1.3.11'
+CFPROPERTYLIST_VER='2.3.2'
 
 TITLE=clburlison_puppet_run
 REVERSE_DOMAIN=com.clburlison
@@ -16,8 +20,8 @@ PAYLOAD=\
 	pack-keys \
 	pack-site.pp \
 	pack-script-postinstall \
-	# pack-gems
-	# pack-puppetconf \
+	pack-puppetconf \
+	pack-gems
 
 pack-puppet_run: l_usr
 	@sudo mkdir -p ${WORK_D}/usr/local/bin/
@@ -43,7 +47,6 @@ pack-pathsd: l_private_etc
 pack-keys: l_private_etc
 	@sudo mkdir -p ${WORK_D}/private/etc/puppetlabs/puppet/keys
 	@sudo ${CP} keys/* ${WORK_D}/private/etc/puppetlabs/puppet/keys/
-	# @sudo chown -R puppet:puppet ${WORK_D}/private/etc/puppetlabs/puppet/keys
 	@sudo chown -R root:wheel ${WORK_D}/private/etc/puppetlabs/puppet/keys
 	@sudo chmod -R 0500 ${WORK_D}/private/etc/puppetlabs/puppet/keys
 	@sudo chmod 0400 ${WORK_D}/private/etc/puppetlabs/puppet/keys/private_key.pkcs7.pem
@@ -67,18 +70,18 @@ pack-gems-no-build:
 	@sudo ${CP} -R pkgroot/* ${WORK_D}
 
 ruby-paths:
-	rm -rf pkgroot
+	sudo rm -rf pkgroot
 	mkdir -p $(INSTALL_DIR)
 	mkdir -p $(BINARY_DIR)
 
 r10k: ruby-paths
-	@sudo $(GEM) install r10k --platform 'Darwin' --install-dir $(INSTALL_DIR) --bindir $(BINARY_DIR)
+	@sudo $(GEM) install r10k -v $(R10K_VER) --platform 'Darwin' --install-dir $(INSTALL_DIR) --bindir $(BINARY_DIR)
 
 hiera-eyaml: ruby-paths
-	@sudo $(GEM) install hiera-eyaml --platform 'Darwin' --install-dir $(INSTALL_DIR) --bindir $(BINARY_DIR)
+	@sudo $(GEM) install hiera-eyaml -v $(HIERA_EYAML_VER) --platform 'Darwin' --install-dir $(INSTALL_DIR) --bindir $(BINARY_DIR)
 
 sqlite3: ruby-paths
-	@sudo $(GEM) install sqlite3 --platform 'Darwin' --install-dir $(INSTALL_DIR) --bindir $(BINARY_DIR)
+	@sudo $(GEM) install sqlite3 -v $(SQLITE3_VER) --platform 'Darwin' --install-dir $(INSTALL_DIR) --bindir $(BINARY_DIR)
 
 CFPropertyList: ruby-paths
-	@sudo $(GEM) install CFPropertyList --platform 'Darwin' --install-dir $(INSTALL_DIR) --bindir $(BINARY_DIR)
+	@sudo $(GEM) install CFPropertyList -v $(CFPROPERTYLIST_VER) --platform 'Darwin' --install-dir $(INSTALL_DIR) --bindir $(BINARY_DIR)

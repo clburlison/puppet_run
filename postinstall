@@ -9,37 +9,54 @@ import os
 import sys
 import shutil
 import platform
+import time
 
+start_time = time.time()
 logging.basicConfig(filename='/var/log/puppet_run.log',level=logging.INFO)
-logger = logging.getLogger('puppet_run')
-puppet_cmd = ['/opt/puppetlabs/bin/puppet', 'apply', '--verbose', '-t', '/Library/Puppet/site.pp']
-run_lock_file = '/var/lib/puppet/state/agent_catalog_run.lock'
-disabled_lock_file = '/var/lib/puppet/state/agent_disabled.lock'
+logger = logging.getLogger('Initial_Setup')
+puppet = '/opt/puppetlabs/bin/puppet'
+puppet_cmd = [puppet, 'apply', '--verbose', '-t', '/Library/Puppet/site.pp']
 
 def ip_addresses():
-    """Retrieve OS version."""
+    """Return all system IP addresses."""
     command = "ifconfig  | grep -E 'inet.[0-9]' | grep -v '127.0.0.1' | awk '{ print $2}' | wc -l"
     proc = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE)
     return proc.communicate()[0].replace('\n', '')
 
 def check_network():
-    """Retrieve OS version."""
+    """Check for an active network connection."""
     if ip_addresses().strip() != "0":
         logger.info('Network connection is active. ')
     else:
         logger.info('Network connection is inactive. ')
         sys.exit(-1)
 
-def run_puppet():
-    """Retrieve OS version."""
+def install_gems_using_puppet():
+    """Run puppet to install Ruby Gems needed for
+    my Puppet 4 masterless setup."""
     if os.path.exists('/opt/puppetlabs/bin/puppet'):
         logger.info("Installing Ruby Gems with Puppet...")
         returncode = subprocess.call(puppet_cmd)
 
 def cleanup():
-    """Retrieve OS version."""
+    """Remove temporary files."""
     logger.info('Cleaning up...')
-    shutil.rmtree('/Library/Puppet')
+    if os.path.exists('/Library/Puppet'):
+        shutil.rmtree('/Library/Puppet')
+
+def remove_old_gems():
+    """Remove old puppet 3 gems."""
+    options = '--force --all --executables --install-dir /Library/Ruby/Gems/2.0.0'
+    gems = [ 'CFPropertyList', 'colored', 'cri', 'facter', 'faraday', 'faraday_middleware',
+            'faraday_middleware-multi_json', 'hiera', 'hiera-eyaml', 'highline', 'io-console', 'json', 
+            'json_pure', 'libxml-ruby', 'log4r', 'minitar', 'multi_json', 'multipart-post', 'nokogiri', 
+            'rdoc', 'sqlite3', 'trollop', 'puppet', 'r10k', 'semantic_puppet' ]
+    
+    logger.info('Removing old Puppet 3 gems...')
+    for gem in gems:
+        command = "/usr/bin/gem uninstall %s %s" % (gem, options)
+        proc = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc.communicate()
 
 def os_vers():
     """Retrieve OS version."""
@@ -47,7 +64,7 @@ def os_vers():
     return maj_os_vers
 
 def install_commandline_tools():
-    """Retrieve OS version."""
+    """Install command line tools."""
     logger.info('Checking to see if we need to install command line tools...')
     if not 9 <= int(os_vers()):
         logger.info("Unsupported Operating System.")
@@ -75,19 +92,23 @@ def install_commandline_tools():
         logger.info('Command line tools already installed')
 
 def full_puppet_run():
-    """Retrieve OS version."""
+    """Run full puppet script."""
     logger.info('Running full puppet run with r10k + puppet...')
     proc = subprocess.Popen([sys.executable, "/usr/local/bin/puppet_run.py"])
     proc.communicate()
-    logger.info('Puppet run complete')
+    logger.info('Initial Puppet run complete')
 
 def main():
+    """Main for running the puppet setup."""
+    logger.info("--- Starting Initial Setup ---")
     try:
         check_network()
         install_commandline_tools()
-        run_puppet()
+        install_gems_using_puppet()
+        remove_old_gems()
         cleanup()
         full_puppet_run()
+        logger.info("--- Initial Setup Completed in: %s Seconds ---" % (time.time() - start_time))
     except SystemExit as e:
         # this log will include traceback
         logger.exception('Process failed with the following: %S' % e)
